@@ -77,6 +77,7 @@
     .rail li button { font-size: 0; gap: 0; }
     .rail li button[aria-current] { font-size: 12px; gap: 6px; }
   }
+  @media (min-width: 801px) and (max-height: 820px) { .slide { font-size: 16px; grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 48px; padding-block: 20px; } h2 { margin-bottom: 10px; } p { margin-bottom: 10px; } }
   @media (prefers-reduced-motion: reduce) { .rail ol::after { transition: none; } }
 </style>
 </head>
@@ -90,7 +91,7 @@
   <section class="slide open" id="start" data-label="" aria-label="Start">
     <div>
       <h1>Every vertex once</h1>
-      <p class="lede">In 1859 William Rowan Hamilton sold a puzzle to a London games maker for £25. It asked for a round trip that visits every corner of a solid exactly once. Which solids allow such a trip? For one large family, the answer arrived in 2026.</p>
+      <p class="lede">In 1859 William Rowan Hamilton sold a puzzle to a London games maker for £25. It asks for a closed path along the edges of a dodecahedron that visits every vertex exactly once. Which polyhedra have such a path? For one large family, the answer came in 2026.</p>
     </div>
   </section>
 
@@ -98,14 +99,13 @@
     <div>
       <time>1856</time>
       <h2>The Icosian game</h2>
-      <p>Hamilton, Ireland’s Royal Astronomer, invented the game in 1856. The board is a flattened dodecahedron: 20 holes for its 20 corners, joined by 30 lines. Travel along the lines, visit every hole once, and end where you started. In the two-player version, one player picks the first five stops and the other must finish the trip.</p>
-      <p>Jaques &amp; Son of London sold it from 1859, as a flat board and as a hand-held dome. It sold poorly, because a little trial and error solves it. There is only one route to find: without the labels, every solution is the same cycle, turned or mirrored.</p>
-      <p>Hamilton disagreed and pointed to a colleague who had failed. The writer David Darling suspects Hamilton found it harder than his customers did, because he solved it with algebra instead of trial and error.</p>
+      <p>Hamilton, the Royal Astronomer of Ireland, invented the game in 1856, while studying the symmetries of the dodecahedron. The board is a dodecahedron drawn flat: 20 holes for its 20 vertices, 30 lines for its 30 edges. The player moves along the edges, visits every vertex exactly once, and returns to the start. In the two-player version, one player chooses the first five vertices and the other must complete the cycle.</p>
+      <p>Jaques &amp; Son of London sold it from 1859, as a flat board and as a hand-held dome. It did not sell well. Trial and error solves it, and there is essentially one solution: up to rotations and reflections of the dodecahedron, all its Hamiltonian cycles are the same. Hamilton insisted it was hard and cited a colleague who had failed. The writer David Darling suggests Hamilton found it harder than his customers did, because he solved it with his theory instead of by trial and error.</p>
     </div>
     <figure>
       <div class="pair">
         <img src="images/hamilton.jpg" width="640" height="768" alt="Painted portrait of William Rowan Hamilton">
-        <img src="images/icosian-game.jpg" width="600" height="420" alt="A wooden Icosian game board: a flattened dodecahedron with pegs at its twenty corners">
+        <img src="images/icosian-game.jpg" width="600" height="420" alt="A wooden Icosian game board: a flattened dodecahedron with pegs at its twenty vertices">
       </div>
       <figcaption>Hamilton, and a modern reconstruction of his game at the University of São Paulo.<small>Photo: Alisson Ricardo, exhibit by Estes Objethos Atelier, Matemateca IME-USP, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></small></figcaption>
     </figure>
@@ -114,15 +114,15 @@
   <section class="slide" id="1861" data-label="1861">
     <div>
       <time>1861</time>
-      <h2>Why “Hamiltonian”</h2>
-      <p>A closed route along the edges that passes through every vertex exactly once is now called a <strong>Hamiltonian cycle</strong>. Leave out the return to the start and it is a <strong>Hamiltonian path</strong>.</p>
-      <p>Hamilton was not the first to study them. Knight’s tours, where a chess knight visits every square once, go back to the 9th century in India and in the medieval Islamic world. In England, Thomas Kirkman was studying the same cycles on polyhedra at the same time as Hamilton. Hamilton visited him in 1861 and gave him a copy of the game.</p>
-      <p>Still, the cycles were named after Hamilton, because of the Icosian game.</p>
+      <h2>Why the cycles are called Hamiltonian</h2>
+      <p>A <strong>Hamiltonian cycle</strong> in a graph passes through every vertex exactly once and returns to its start. A <strong>Hamiltonian path</strong> passes through every vertex exactly once without returning.</p>
+      <p>Hamilton was not the first to study them. A closed knight’s tour, in which a knight visits every square of a chessboard once and returns to its first square, is a Hamiltonian cycle, and knight’s tours date back to 9th-century India and the medieval Islamic world. Thomas Kirkman studied Hamiltonian cycles on polyhedra at the same time as Hamilton, who visited him in 1861 and gave him a copy of the game. Still, the cycles were named after Hamilton, for the Icosian game.</p>
+      <p>The game became a classic of recreational mathematics, written about by Édouard Lucas, Wilhelm Ahrens and Martin Gardner. Similar puzzles are sold as smartphone apps, and the Maker–Breaker games on Hamiltonian cycles that Václav Chvátal and Paul Erdős introduced in 1978 are still studied.</p>
     </div>
     <figure>
       <div class="pair">
         <img src="images/kirkman.jpg" width="268" height="326" alt="Photograph of Thomas Kirkman">
-        <img class="drawing" src="images/dodecahedron-hamiltonian-cycle.svg" width="470" height="450" alt="A flattened dodecahedron with a red closed path through all twenty vertices">
+        <img class="drawing" src="images/dodecahedron-hamiltonian-cycle.svg" width="470" height="450" alt="The graph of the dodecahedron with a Hamiltonian cycle drawn in red">
       </div>
       <figcaption>Thomas Kirkman, and a Hamiltonian cycle on the dodecahedron.<small>Cycle: Christoph Sommer, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></small></figcaption>
     </figure>
@@ -131,9 +131,9 @@
   <section class="slide" id="1884" data-label="1884">
     <div>
       <time>1884</time>
-      <h2>Tait’s guess</h2>
-      <p>Peter Guthrie Tait, a physicist in Edinburgh, wanted to prove the four colour theorem. He saw a shortcut. Take a solid where every corner meets exactly three edges. If it has a Hamiltonian cycle, its faces can be coloured with four colours so that no two neighbours match.</p>
-      <p>So Tait guessed that every such solid has one. The guess stood for 62 years.</p>
+      <h2>Tait’s conjecture</h2>
+      <p>Peter Guthrie Tait, a physicist in Edinburgh, was trying to prove the four colour theorem. A polyhedron is <strong>simple</strong> if exactly three edges meet at every vertex. Tait saw that if a simple polyhedron has a Hamiltonian cycle, its faces can be coloured with four colours so that faces sharing an edge get different colours.</p>
+      <p>He conjectured that every simple polyhedron has a Hamiltonian cycle. In graph terms: every cubic, 3‑connected planar graph is Hamiltonian. (By Steinitz’s theorem, the graphs of polyhedra are exactly the 3‑connected planar graphs.) The conjecture stood for 62 years.</p>
     </div>
     <figure>
       <img src="images/tait.jpg" width="960" height="1176" alt="Photograph of Peter Guthrie Tait">
@@ -144,8 +144,8 @@
   <section class="slide" id="1946" data-label="1946">
     <div>
       <time>1946</time>
-      <h2>Tutte breaks it</h2>
-      <p>W. T. Tutte had spent the war at Bletchley Park, where he worked out how the German Lorenz cipher machine was built. Back at Cambridge, he drew a solid with 46 corners, three edges at each, and no Hamiltonian cycle. Tait was wrong.</p>
+      <h2>Tutte’s counterexample</h2>
+      <p>W. T. Tutte spent the Second World War at Bletchley Park, where he worked out the structure of the German Lorenz cipher machine. In 1946, back at Cambridge, he published a cubic, 3‑connected planar graph with 46 vertices and no Hamiltonian cycle. Tait’s conjecture was false.</p>
     </div>
     <figure>
       <img class="drawing" src="images/tutte-graph.svg" width="584" height="530" alt="The Tutte graph: 46 vertices built from three identical pieces">
@@ -156,40 +156,40 @@
   <section class="slide" id="1969" data-label="1969">
     <div>
       <time>1969</time>
-      <h2>Barnette’s question</h2>
-      <p>Tutte’s solid has faces with an odd number of sides. David Barnette, later a professor at UC Davis, asked what happens if every face is even.</p>
-      <p>Even faces have a catch, which Kirkman found in 1855: a cycle must then alternate between two kinds of corner, so a solid with an odd number of corners has none. But when three edges meet at every corner, the two kinds come in equal numbers, and the catch disappears.</p>
-      <p>Barnette conjectured that every such solid has a Hamiltonian cycle: every cubic, bipartite, 3-connected planar graph is Hamiltonian. It appeared in 1969 in a book edited by Tutte. Every solid in the game is one of these.</p>
+      <h2>Barnette’s conjecture</h2>
+      <p>The Tutte graph has faces with an odd number of edges. David Barnette, later a professor at UC Davis, asked what happens when every face has an even number of edges.</p>
+      <p>Such a graph is <strong>bipartite</strong>: its vertices split into two classes, and every edge joins the two. A cycle then alternates between the classes, so a bipartite graph with an odd number of vertices has no Hamiltonian cycle. Kirkman had pointed this out in 1855. In a cubic bipartite graph, though, the two classes have the same size, so this obstruction never arises.</p>
+      <p>Barnette conjectured that every cubic, bipartite, 3‑connected planar graph is Hamiltonian: every simple polyhedron whose faces all have an even number of edges has a Hamiltonian cycle. It appeared in 1969 in a volume edited by Tutte. Every polyhedron in the game is of this kind.</p>
     </div>
     <figure>
-      <img class="drawing" src="images/barnette-graph.svg" width="651" height="314" alt="A graph with only even faces drawn twice, the second time with a Hamiltonian cycle highlighted">
-      <figcaption>A Barnette graph, and a Hamiltonian cycle on it.</figcaption>
+      <img class="drawing" src="images/barnette-graph.svg" width="651" height="314" alt="The graph of the cube drawn twice, as a planar graph and as a bipartite graph, with a Hamiltonian cycle in green">
+      <figcaption>The cube: a cubic, bipartite, 3‑connected planar graph and one of its Hamiltonian cycles.</figcaption>
     </figure>
   </section>
 
   <section class="slide" id="1976" data-label="1976">
     <div>
       <time>1976</time>
-      <h2>Off the page, it fails</h2>
-      <p>In 1971 Tutte guessed that the word <em>planar</em> could go. Joseph Horton proved him wrong with a graph of 96 vertices, three edges at each, corners split into two equal halves, and no Hamiltonian cycle. It cannot be drawn without crossing edges, so it is not a solid. The smallest such graph, found later, has 50 vertices.</p>
-      <p>Barnette’s question, about solids, stood untouched.</p>
+      <h2>Planarity matters</h2>
+      <p>In 1971 Tutte conjectured that planarity is not needed: every cubic, bipartite, 3‑connected graph would be Hamiltonian. Joseph Horton found a counterexample with 96 vertices, published in 1976. It is not planar, so it is not the graph of a polyhedron. The smallest counterexample, found independently by Georges and by Kelmans, has 50 vertices.</p>
+      <p>Barnette’s conjecture, which requires planarity, was untouched.</p>
     </div>
     <figure>
       <img class="drawing" src="images/horton-graph.svg" width="868" height="809" alt="The Horton graph: 96 vertices with many crossing edges">
-      <figcaption>The Horton graph.<small>Koko90, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></small></figcaption>
+      <figcaption>The Horton graph: cubic, bipartite, 3‑connected, not planar, no Hamiltonian cycle.<small>Koko90, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></small></figcaption>
     </figure>
   </section>
 
   <section class="slide" id="2025" data-label="1975–2025">
     <div>
       <time>1975–2025</time>
-      <h2>Closing in</h2>
-      <p>For half a century no one found a counterexample, and no one found a proof. In 1975 Paul Goodey settled the solids whose faces are only squares and hexagons. Computers checked every case up to 64 vertices in 1985, and up to 90 in 2022. In 2025 Tobias Schnieders covered every case with faces of at most eight sides.</p>
-      <p>Each result shrank the space where a counterexample could hide.</p>
+      <h2>Partial results</h2>
+      <p>For half a century there was neither a counterexample nor a proof. In 1975 Paul Goodey proved the conjecture when every face is a quadrilateral or a hexagon. Computer searches verified it for every graph with up to 64 vertices in 1985, and up to 90 vertices in 2022. In 2025 Tobias Schnieders proved it when every face has at most eight edges.</p>
+      <p>Each result narrowed the place where a counterexample could hide.</p>
     </div>
     <figure>
       <img src="images/solid-120.jpg" width="1320" height="1180" alt="The truncated icosidodecahedron from the game, with the runner and the first red edges of his cycle">
-      <figcaption>The last solid in the game has 120 vertices, more than any computer search reached.</figcaption>
+      <figcaption>The last polyhedron in the game, the truncated icosidodecahedron, has 120 vertices, more than any computer search has covered.</figcaption>
     </figure>
   </section>
 
@@ -197,14 +197,14 @@
     <div>
       <time>2026</time>
       <h2>The proof</h2>
-      <p>OpenAI’s paper <em>Paired states and Hamiltonian cycles in cubic bipartite planar graphs</em>, dated 24 September 2026 and released on 6 October, proves Barnette right, and a little more: the cycle can avoid any one edge you choose.</p>
-      <p>Put a dot in every face and join the dots of neighbouring faces. A Hamiltonian cycle becomes a way to split the dots into two trees. The proof counts certain arrangements on these dots, each with a sign. Those with a loop cancel out, yet the total is not zero. So one without a loop exists. It gives the trees, and the trees give the cycle.</p>
+      <p>OpenAI’s paper <em>Paired states and Hamiltonian cycles in cubic bipartite planar graphs</em>, dated 24 September 2026 and released on 6 October, proves the conjecture. It proves slightly more: for any edge, there is a Hamiltonian cycle that avoids it.</p>
+      <p>The proof works in the dual graph, a triangulation of the sphere with a vertex for every face. There, a Hamiltonian cycle corresponds to a partition of the vertices into two sets that each induce a tree. The proof counts certain configurations on the triangulation, each with a complex weight. Those that contain a cycle cancel in pairs, yet the total is not zero. So a configuration without a cycle exists, and it gives the two trees.</p>
       <p>Fifty-seven years after Barnette asked, the answer is yes.</p>
       <a class="next" href="proof.html">Walk through the proof</a>
     </div>
     <figure>
-      <img src="images/proof-figure.jpg" width="1050" height="1050" alt="A Barnette graph drawn over its dual triangulation, from the proof walkthrough">
-      <figcaption>A Barnette graph over its triangulation, from the walkthrough.</figcaption>
+      <img src="images/proof-figure.jpg" width="1050" height="1050" alt="A cubic bipartite planar graph drawn over its dual triangulation, from the proof walkthrough">
+      <figcaption>A cubic bipartite planar graph over its dual triangulation, from the walkthrough.</figcaption>
     </figure>
   </section>
 </main>
