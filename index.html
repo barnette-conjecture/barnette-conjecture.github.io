@@ -10,11 +10,11 @@
 <style>
   body { background: var(--ground); }
 
-  /* The stage fills the first screen, short of the question, which peeks in below. */
+  /* One screen: the stage on the left, the question on the right. On a phone the question sits below. */
+  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 28vw); height: 100vh; height: 100svh; }
   .stage {
-    display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center;
-    height: calc(100vh - 104px); height: calc(100svh - 104px); min-height: 360px;
-    background: radial-gradient(ellipse closest-side, var(--glow), var(--ground)) var(--ground);   /* ground at every edge, so the question below meets it seamlessly */
+    display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; min-height: 0;
+    background: radial-gradient(ellipse closest-side, var(--glow), var(--ground)) var(--ground);   /* ground at every edge, so it meets the question seamlessly */
     user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
   }
   canvas { display: block; width: 100%; height: 100%; min-height: 0; }
@@ -36,20 +36,24 @@
     0%, 74%, 98% { transform: none; box-shadow: 0 3px 0 var(--line); }
   }
 
-  /* Below the stage: one question, two answers. */
-  .more { max-width: 760px; margin: 0 auto; padding: 30px 16px 120px; text-align: center; }
-  .more h2 { margin: 0 0 32px; font-size: clamp(26px, 4.4vw, 40px); line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
-  .more nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  /* One question, two answers. */
+  .more { display: flex; flex-direction: column; justify-content: center; padding: 32px 40px 32px 0; }
+  .more h2 { margin: 0 0 24px; font-size: clamp(26px, 2.6vw, 36px); line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
+  .more nav { display: grid; gap: 12px; }
   .more a {
-    display: flex; align-items: center; justify-content: space-between; padding: 22px 24px;
-    font-size: 21px; font-weight: 600; letter-spacing: -0.015em; text-decoration: none;
+    display: flex; align-items: center; justify-content: space-between; padding: 20px 22px;
+    font-size: 20px; font-weight: 600; letter-spacing: -0.015em; text-decoration: none;
     background: var(--glow); border: 1px solid color-mix(in srgb, var(--line) 55%, transparent); border-radius: var(--radius);
     transition: transform 160ms ease, border-color 160ms ease;
   }
   .more a::after { content: "→"; color: var(--thread); transition: transform 160ms ease; }
   .more a:hover { border-color: var(--line); transform: translateY(-2px); }
   .more a:hover::after { transform: translateX(3px); }
-  @media (max-width: 520px) { .more nav { grid-template-columns: 1fr; } }
+  @media (max-width: 800px) {
+    main { display: block; height: auto; }
+    .stage { height: calc(100vh - 104px); height: calc(100svh - 104px); min-height: 360px; }
+    .more { max-width: 520px; margin: 0 auto; padding: 30px 16px 64px; text-align: center; }
+  }
 </style>
 </head>
 <body>
