@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Hold the right arrow: a runner threads a Hamiltonian cycle around a polytope that turns beneath him.">
+<title>Every Vertex Once</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%226%22 fill=%22%23e5372b%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="site.css">
+<style>
+  body { background: var(--ground); }
+
+  /* The stage fills the first screen, short of the question, which peeks in below. */
+  .stage {
+    display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center;
+    height: calc(100vh - 104px); height: calc(100svh - 104px); min-height: 360px;
+    background: radial-gradient(ellipse closest-side, var(--glow), var(--ground)) var(--ground);   /* ground at every edge, so the question below meets it seamlessly */
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  }
+  canvas { display: block; width: 100%; height: 100%; min-height: 0; }
+
+  /* Two keys: they sink while held, and until first pressed the forward one shows how. */
+  .keys { display: flex; gap: 10px; margin: 0 0 28px; }
+  .keys button {
+    appearance: none; display: grid; place-items: center; width: 64px; height: 40px; padding: 0; cursor: pointer;
+    color: var(--ink); border: 1px solid var(--line); border-radius: 11px; background: var(--glow); box-shadow: 0 3px 0 var(--line);
+    touch-action: none; transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+  }
+  .keys svg { width: 18px; height: 18px; opacity: .72; }
+  .keys button[aria-pressed="true"] { transform: translateY(3px); box-shadow: 0 0 0 var(--line); }
+  @media (prefers-reduced-motion: no-preference) {
+    .keys:not(.used) [data-way="1"] { animation: nudge 3s ease-in-out infinite; }
+  }
+  @keyframes nudge {
+    82%, 90% { transform: translateY(3px); box-shadow: 0 0 0 var(--line); }
+    0%, 74%, 98% { transform: none; box-shadow: 0 3px 0 var(--line); }
+  }
+
+  /* Below the stage: one question, two answers. */
+  .more { max-width: 760px; margin: 0 auto; padding: 30px 16px 120px; text-align: center; }
+  .more h2 { margin: 0 0 32px; font-size: clamp(26px, 4.4vw, 40px); line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
+  .more nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .more a {
+    display: flex; align-items: center; justify-content: space-between; padding: 22px 24px;
+    font-size: 21px; font-weight: 600; letter-spacing: -0.015em; text-decoration: none;
+    background: var(--glow); border: 1px solid color-mix(in srgb, var(--line) 55%, transparent); border-radius: var(--radius);
+    transition: transform 160ms ease, border-color 160ms ease;
+  }
+  .more a::after { content: "→"; color: var(--thread); transition: transform 160ms ease; }
+  .more a:hover { border-color: var(--line); transform: translateY(-2px); }
+  .more a:hover::after { transform: translateX(3px); }
+  @media (max-width: 520px) { .more nav { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <section class="stage">
+    <canvas role="img"></canvas>
+    <div class="keys">
+      <button type="button" tabindex="-1" data-way="-1" aria-label="Back" aria-pressed="false">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 9H3M8 4L3 9l5 5"/></svg>
+      </button>
+      <button type="button" tabindex="-1" data-way="1" aria-label="Forward" aria-pressed="false">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h12M10 4l5 5-5 5"/></svg>
+      </button>
+    </div>
+  </section>
+  <section class="more">
+    <h2>Want to find out more?</h2>
+    <nav>
+      <a href="history.html">History</a>
+      <a href="proof.html">Proof</a>
+    </nav>
+  </section>
+</main>
+
+<script type="importmap">{ "imports": { "three": "./three.min.js" } }</script>
+<script type="module">
+// Every Vertex Once
+//
+// Hold the right arrow and a runner threads a Hamiltonian cycle around a
+// polytope; hold the left arrow and he turns and runs back. The thread he has
+// laid stays laid. He never leaves the middle of the stage: the polytope rolls
+// beneath him.
+//
+//   Polytopes   what he runs on, and the cycle he runs
+//   Stage       renderer, camera, light, colour
+//   World       the polytope, its edges, the thread and its beads
+//   Frame       keeping him still while the polytope moves
+//   Runner      a body of rods and balls, and how it runs
+//   Play        input, and what happens when the cycle closes
+//
+// The page, site.css for its colours, and three.min.js (three.js r187, bundled whole).
+// To work on it, serve the folder with any static server.
+
+import {
+  BufferGeometry, Color, CylinderGeometry, DirectionalLight, Float32BufferAttribute, Group, HemisphereLight,
+  InstancedMesh, MathUtils, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, PerspectiveCamera, PointLight,
+  Quaternion, Scene, SphereGeometry, Vector3, WebGLRenderer,
+} from 'three';
+
+const { PI, abs, atan, atan2, cos, exp, floor, hypot, max, min, sign, sin, sqrt, tan } = Math;
+const { clamp, damp, lerp, smootherstep, smoothstep } = MathUtils;
+
+// ── Polytopes ────────────────────────────────────────────────────────────────
+
+// Barnette's conjecture (1969; a proof was announced in 2026): every simple
+// 3-polytope whose faces all have an even number of sides has a Hamiltonian
+// cycle. These five are such polytopes.
+const POLYTOPES = [
+  [2, 2, 'cube'], [2, 3, 'hexagonal prism'], [3, 3, 'truncated octahedron'],
+  [3, 4, 'truncated cuboctahedron'], [3, 5, 'truncated icosidodecahedron'],
+];
+
+// The omnitruncated polytope of the reflection group [p, q], with circumradius 1.
+// Every vertex is a mirror image of one seed point, and stepping through a
+// vertex's k-th mirror leads to its k-th neighbour: three mirrors make the
+// polytope simple, and reflections make every face even.
+function omnitruncate(p, q) {
+  const a = PI / p, c = cos(PI / q) / sin(a);
+  const mirrors = [new Vector3(1, 0, 0), new Vector3(-cos(a), sin(a), 0), new Vector3(0, -c, sqrt(1 - c * c))];
+  const seed = new Vector3(1, (1 + cos(a)) / sin(a), 0);
+  seed.z = (1 + c * seed.y) / mirrors[2].z;                       // one unit from each mirror
+  const radius = seed.length(), images = [{ at: seed, mirrors }], adjacency = [];
+  for (const { at, mirrors } of images) adjacency.push(mirrors.map(m => {
+    const image = at.clone().reflect(m);
+    const known = images.findIndex(v => v.at.distanceToSquared(image) < 1e-6);
+    return known >= 0 ? known : images.push({ at: image, mirrors: mirrors.map(n => n.clone().reflect(m)) }) - 1;
+  }));
+  const points = images.map(v => v.at.divideScalar(radius));
+
+  // A face is what two of the three mirrors generate.
+  const faces = new Map();
+  for (const [i, j] of [[0, 1], [1, 2], [0, 2]]) adjacency.forEach((_, start) => {
+    const ring = [];
+    for (let v = start, k = i; v !== start || !ring.length; v = adjacency[v][k], k = i + j - k) ring.push(v);
+    const normal = ring.reduce((n, v) => n.add(points[v]), new Vector3()).normalize();
+    const [u, v, w] = ring.map(k => points[k]);
+    if (v.clone().sub(u).cross(w.clone().sub(v)).dot(normal) < 0) ring.reverse();   // counter-clockwise from outside
+    faces.set([...ring].sort((x, y) => x - y).join(), { ring, normal, offset: normal.dot(u) });
+  });
+  return { points, adjacency, faces: [...faces.values()], edge: 2 / radius };
+}
+
+// A cycle through every vertex exactly once, found depth-first, trying the
+// mirrors in order. On the cube this is the Gray code.
+function hamiltonianCycle(adjacency) {
+  const cycle = [0], used = new Uint8Array(adjacency.length);
+  const open = (v, end) => adjacency[v].filter(w => !used[w] || w === end || w === 0).length > 1;
+  const extend = () => {
+    const end = cycle.at(-1);
+    if (cycle.length === adjacency.length) return adjacency[end].includes(0);
+    for (const next of adjacency[end]) if (!used[next]) {
+      used[next] = 1, cycle.push(next);
+      if (adjacency[end].every(w => used[w] || open(w, next)) && extend()) return true;
+      used[next] = 0, cycle.pop();
+    }
+    return false;
+  };
+  used[0] = 1;
+  return extend() && cycle;
+}
+
+// ── Stage ────────────────────────────────────────────────────────────────────
+
+const H = 0.4;                  // the runner's height; every polytope has radius 1
+const SPEED = 1;                // his top speed, in radii per second
+const HAIR = 0.003, THREAD = 0.011, DOT = 0.011, BEAD = 0.024;    // radii: edge, thread, vertex, visited vertex
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const canvas = document.querySelector('canvas'), keys = document.querySelector('.keys');
+const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
+const scene = new Scene(), camera = new PerspectiveCamera(24, 1, 1, 30);
+const sky = new HemisphereLight(0xffffff, 0xc9ccd2, 1.5), sun = new DirectionalLight(0xffffff, 1.6), lamp = new PointLight(0xffffff, 8);
+const EYE = new Vector3(sin(0.5) * cos(0.36), sin(0.36), cos(0.5) * cos(0.36)), FOCUS = new Vector3(0, -0.72, 0);
+
+renderer.shadowMap.enabled = true;
+sun.position.set(-2.6, 2.4, 0.2);         // low and from the side, so his shadow runs with him across the faces
+lamp.position.set(-1.6, 1.4, 2.6);        // close, so each face shades from one side to the other
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.radius = 3;
+Object.assign(sun.shadow.camera, { left: -0.9, right: 0.9, top: 0.9, bottom: -0.9, near: 2, far: 6 }).updateProjectionMatrix();
+scene.add(sky, sun, lamp);
+
+// Stand back until the polytope and a leaping runner both fit.
+new ResizeObserver(() => {
+  const w = canvas.clientWidth, h = canvas.clientHeight, half = MathUtils.degToRad(camera.fov / 2);
+  if (!w || !h) return;
+  renderer.setPixelRatio(min(devicePixelRatio, 2));
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.position.copy(FOCUS).addScaledVector(EYE, max(1.46 / sin(half), 1.14 / sin(atan(tan(half) * camera.aspect))));
+  camera.lookAt(FOCUS);
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+}).observe(canvas);
+
+// Every shape is a rod or a ball.
+const UP = new Vector3(0, 1, 0);
+const ROD = new CylinderGeometry(1, 1, 1, 16).translate(0, 0.5, 0), BALL = new SphereGeometry(1, 24, 16);
+const LIMB = new CylinderGeometry(0.8, 1, 1, 16).translate(0, 0.5, 0);    // a rod that tapers by a fifth
+const matrix = new Matrix4(), turn = new Quaternion(), way = new Vector3(), size = new Vector3();
+const rod = (a, b, r) => matrix.compose(a, turn.setFromUnitVectors(UP, way.subVectors(b, a).normalize()), size.set(r, a.distanceTo(b), r));
+const ball = (a, r) => matrix.compose(a, turn.identity(), size.setScalar(r));
+const angle = (a, b, about) => atan2(a.clone().cross(b).dot(about), a.dot(b));    // from a to b, turning about an axis
+
+// Colours come from the page, so the scene follows its theme.
+const colour = { solid: new Color(), line: new Color(), ink: new Color(), thread: new Color() };
+const matter = {
+  solid: new MeshStandardMaterial({ vertexColors: true, roughness: 0.7, transparent: true, opacity: 0.88 }),   // the far side shows through, faintly
+  line: new MeshBasicMaterial(),
+  thread: new MeshStandardMaterial({ roughness: 0.6 }),
+  bead: new MeshStandardMaterial({ roughness: 0.6 }),
+  ink: new MeshStandardMaterial({ roughness: 0.55 }),
+};
+function paint() {
+  const style = getComputedStyle(document.documentElement);
+  for (const name in colour) colour[name].set(style.getPropertyValue(`--${name}`).trim());
+  for (const name of ['line', 'thread', 'ink']) matter[name].color.copy(colour[name]);
+  shade();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paint);
+new MutationObserver(paint).observe(document.documentElement, { attributeFilter: ['data-theme'] });
+
+// ── World: the polytope, its edges, the thread and its beads ─────────────────
+
+const world = new Group();
+const faces = new Mesh(new BufferGeometry(), matter.solid), edges = new InstancedMesh(ROD, matter.line, 180);
+const thread = new InstancedMesh(ROD, matter.thread, 120), beads = new InstancedMesh(BALL, matter.bead, 120);
+for (const mesh of [faces, edges, thread, beads]) mesh.receiveShadow = true, mesh.frustumCulled = false, world.add(mesh);
+scene.add(world);
+
+let level, shape, corners, length;          // which polytope, the polytope, its cycle's corners in order, the cycle's length
+let owner, tint, depth, lag;                // per triangle its face; per face how inked, and how far from where the cycle closes
+let s = 0, far = 0, speed = 0, clock = 0;   // where he is along the cycle, the furthest he has been, his signed speed, the time
+let sense = 1, about = 0;                   // which way along the cycle he faces (±1), and how far he has turned to face it
+let reached, visited;                       // how many corners he has reached, and when he reached each
+
+function enter(index) {
+  const [p, q] = POLYTOPES[level = index % POLYTOPES.length];
+  shape = omnitruncate(p, q);
+  const cycle = hamiltonianCycle(shape.adjacency), n = cycle.length, { points } = shape;
+  corners = cycle.map(v => points[v]);
+  length = n * shape.edge;
+  s = far = 0, sense = 1, about = 0, reached = -1, visited = [];
+
+  // Faces, as fans of triangles.
+  const position = [], normal = [];
+  owner = [];
+  shape.faces.forEach(({ ring, normal: n }, f) => {
+    for (let k = 1; k < ring.length - 1; k++) for (const v of [ring[0], ring[k], ring[k + 1]]) {
+      position.push(...points[v]), normal.push(...n), owner.push(f);
+    }
+  });
+  faces.geometry.dispose();
+  faces.geometry = new BufferGeometry()
+    .setAttribute('position', new Float32BufferAttribute(position, 3))
+    .setAttribute('normal', new Float32BufferAttribute(normal, 3))
+    .setAttribute('color', new Float32BufferAttribute(position.length, 3));
+
+  edges.count = 0;
+  shape.adjacency.forEach((near, v) => near.forEach(w => v < w && edges.setMatrixAt(edges.count++, rod(points[v], points[w], HAIR))));
+  edges.instanceMatrix.needsUpdate = true;
+  corners.forEach((a, k) => thread.setMatrixAt(k, rod(a, corners[(k + 1) % n], THREAD)));
+  beads.count = n;
+
+  // A closed thread splits the faces into two trees. Take the one on its left
+  // and measure each face's distance from the last edge he will run.
+  const after = new Map(cycle.map((v, i) => [v, cycle[(i + 1) % n]]));
+  const follows = ({ ring }, v, w) => ring.some((u, i) => u === v && ring[(i + 1) % ring.length] === w);
+  const left = shape.faces.map(face => face.ring.some(v => follows(face, v, after.get(v))));
+  const touching = (f, g) => f.ring.filter(v => g.ring.includes(v)).length === 2;
+  tint = shape.faces.map(() => 0);
+  depth = shape.faces.map(() => Infinity);
+  let rim = [shape.faces.findIndex(face => follows(face, cycle[n - 1], cycle[0]))], rings = 0;
+  for (; rim.length; rings++) {
+    for (const f of rim) depth[f] = rings;
+    rim = shape.faces.flatMap((face, g) => left[g] && depth[g] === Infinity && rim.some(f => touching(shape.faces[f], face)) ? [g] : []);
+  }
+  lag = min(0.08, 0.8 / rings);
+
+  for (const leg of body.legs) leg.s = 0, leg.aside = leg.side * STANCE, leg.swing = 1, leg.way = 1;
+  heading.copy(facing(0));
+  shade();
+}
+
+// Face colours: pale, or ink where the closed thread has flooded.
+function shade() {
+  const paints = faces.geometry.getAttribute('color'), mixed = new Color();
+  if (!paints) return;
+  for (let i = 0; i < paints.count; i++) paints.setXYZ(i, ...mixed.lerpColors(colour.solid, colour.ink, tint[owner[i]]));
+  paints.needsUpdate = true;
+}
+
+// The point at arc length `along` on the cycle, in the polytope's own space.
+function at(along, out = new Vector3()) {
+  const n = corners.length, t = (along / shape.edge % n + n) % n, k = floor(t);
+  return out.lerpVectors(corners[k], corners[(k + 1) % n], t - k);
+}
+
+// The same point, pushed `aside` to the right of the cycle and dropped onto the surface, in stage space.
+function ground(along, aside = 0, out = new Vector3()) {
+  const p = at(along, out);
+  p.addScaledVector(at(along + 1e-3).sub(at(along - 1e-3)).cross(p).normalize(), aside);
+  let k = Infinity;
+  for (const { normal, offset } of shape.faces) if (normal.dot(p) > 1e-9) k = min(k, offset / normal.dot(p));
+  return world.localToWorld(p.multiplyScalar(k));
+}
+
+// Reveal the thread up to the furthest he has been, and pop a bead on every corner he has reached.
+// Running back leaves it as it is: a laid thread stays laid.
+function trace() {
+  const n = corners.length, k = min(floor(far / shape.edge + 1e-9), n), paints = new Color();
+  while (reached < k) {
+    visited[++reached % n] = reached ? clock : -Infinity;
+    canvas.setAttribute('aria-label', `A runner on a ${POLYTOPES[level][2]}: ${min(reached + 1, n)} of ${n} vertices visited.`);
+  }
+  if (k > 0) thread.setMatrixAt(k - 1, rod(corners[k - 1], corners[k % n], THREAD));
+  if (k < n) thread.setMatrixAt(k, rod(corners[k], at(far), THREAD));
+  thread.count = min(k + 1, n);
+  thread.instanceMatrix.needsUpdate = true;
+  for (let i = 0; i < n; i++) {
+    const age = clamp((clock - (visited[i] ?? Infinity)) / 0.45, 0, 1), pop = 1 + 2.7 * (age - 1) ** 3 + 1.7 * (age - 1) ** 2;
+    beads.setMatrixAt(i, ball(corners[i], lerp(DOT, BEAD, pop)));
+    beads.setColorAt(i, paints.lerpColors(colour.line, colour.thread, min(age * 6, 1)));
+  }
+  beads.instanceMatrix.needsUpdate = beads.instanceColor.needsUpdate = true;
+}
+
+// ── Frame: he stays, the polytope moves ──────────────────────────────────────
+
+const LOOK = 0.2 * H;           // how far ahead and behind he looks to face the way he is going
+const DRIFT = 0.4;              // how far he runs before the stage has turned to follow him
+const heading = new Vector3();  // the stage's sense of "onward", carried on the polytope
+const forward = new Vector3(1, 0, 0), right = new Vector3(0, 0, 1);   // his own, on the stage
+let spin = 0, scale = 1;        // the polytope's flourish between two cycles
+
+// The way the cycle is going at `along`, as a direction on the polytope.
+const facing = along => at(along + LOOK).sub(at(along - LOOK)).projectOnPlane(at(along).normalize()).normalize();
+
+// Put the point he stands on at the top of the stage, and the way the cycle came behind it,
+// so the cycle always runs left to right: forward is to the right, back is to the left.
+function roll(ds) {
+  const p = at(s), up = p.clone().normalize(), ahead = facing(s);
+  heading.projectOnPlane(up).normalize();
+  heading.applyAxisAngle(up, angle(heading, ahead, up) * (1 - exp(-abs(ds) / DRIFT)));
+  world.quaternion.setFromRotationMatrix(matrix.makeBasis(heading, up, heading.clone().cross(up))).invert();
+  forward.copy(ahead).applyQuaternion(world.quaternion).setY(0).normalize().applyAxisAngle(UP, about);
+  right.crossVectors(forward, UP);
+  world.quaternion.premultiply(turn.setFromAxisAngle(UP, spin));
+  world.scale.setScalar(scale);
+  world.position.set(0, -scale * p.length(), 0);
+}
+
+// ── Runner ───────────────────────────────────────────────────────────────────
+
+const STANCE = 0.035 * H, SOLE = 0.034 * H, FOOT = 0.085 * H, LEG = 0.24 * H, HIP = 0.045 * H;
+const TORSO = 0.235 * H, NECK = 0.19 * H, SHOULDER = 0.118 * H, UPPER = 0.14 * H, FORE = 0.135 * H;
+
+// A foot's place: `s` along the cycle, `aside` to his right, and `way` the direction along the cycle its toe points.
+const joint = () => new Vector3();
+const body = {
+  pelvis: joint(), chest: joint(), head: joint(), phase: 0, moving: false, height: 0.512 * H, bank: 0,
+  legs: [-1, 1].map(side => ({ side, hip: joint(), knee: joint(), ankle: joint(), toe: joint(), s: 0, aside: side * STANCE, swing: 1, pitch: 0, way: 1 })),
+  arms: [-1, 1].map(side => ({ side, shoulder: joint(), elbow: joint(), hand: joint() })),
+};
+const limbs = [                 // from the thick end to the thin end, and the thick end's radius in body heights
+  [body.chest, body.pelvis, 0.105],
+  ...body.legs.flatMap(l => [[l.hip, l.knee, 0.052], [l.knee, l.ankle, 0.042], [l.ankle, l.toe, 0.036]]),
+  ...body.arms.flatMap(a => [[a.shoulder, a.elbow, 0.036], [a.elbow, a.hand, 0.029]]),
+];
+const rods = new InstancedMesh(LIMB, matter.ink, limbs.length), balls = new InstancedMesh(BALL, matter.ink, 2 * limbs.length + 3);
+for (const mesh of [rods, balls]) mesh.castShadow = true, mesh.frustumCulled = false, scene.add(mesh);
+
+// He turns round. His left foot is now where his right foot was, so the two legs
+// trade places, and what was to his right is now to his left.
+const FOOTING = ['s', 'aside', 'swing', 'from', 'to', 'wide', 'rate', 'turn', 'kick', 'pitch', 'way'];
+function turnAround() {
+  sense = -sense;
+  const [l, r] = body.legs;
+  for (const k of FOOTING) [l[k], r[k]] = [r[k], l[k]];
+  for (const leg of body.legs) leg.aside = -leg.aside, leg.wide = -leg.wide;
+}
+
+let leap = -1, dip = 0;         // progress of a leap (0…1, or -1 on the ground), and how far he crouches
+
+function pose(dt, ds, push) {
+  const { pelvis, chest, head, legs, arms } = body;
+  const g = abs(speed) / SPEED, moving = g > 0.02;                  // 0 standing … 1 running flat out
+  const jump = leap < 0 ? 0 : 2.2 * H * leap * (1 - leap), air = leap < 0 ? 0 : sin(PI * leap);
+  const duty = lerp(0.62, 0.34, smoothstep(g, 0.2, 0.75));          // the share of a stride a foot spends planted
+  const travel = lerp(0.3, 0.44, g) * H, stride = travel / duty;    // ground covered by one stance, by one stride
+  if (moving && !body.moving) body.phase = 0.5 + 0.45 * duty, legs.forEach(leg => leg.turn = -1);   // step off on the left
+  body.moving = moving;
+  body.phase += abs(ds) / stride;
+
+  // Feet live on the cycle. A planted foot stays where it landed while the polytope
+  // carries it back; a lifted one swings to where the body will be when it lands.
+  for (const leg of legs) {
+    const phase = body.phase + (leg.side > 0 ? 0.5 : 0), frac = phase - floor(phase), home = leg.side * STANCE;
+    const landing = () => moving ? s + sense * (0.45 * travel + (1 - leg.swing) * stride / leg.rate) : s;
+    if (leg.swing >= 1) {
+      const due = moving ? frac >= duty && leg.turn !== floor(phase)
+        : legs.every(l => l.swing >= 1) && (leg.way !== sense || abs(leg.s - s) + abs(leg.aside - home) > 0.03 * H);
+      if (due) Object.assign(leg, { swing: 0, from: leg.s, wide: leg.aside, rate: moving ? 1 / (1 - frac) : 1, turn: floor(phase), kick: leg.pitch }), leg.to = landing();
+    }
+    if (leg.swing < 1) {
+      leg.swing = min(1, leg.swing + max(abs(ds) / stride * leg.rate, dt / lerp(0.26, 0.8, g)));
+      leg.to = damp(leg.to, landing(), 30, dt);
+      const k = smootherstep(leg.swing, 0, 1);
+      leg.s = lerp(leg.from, leg.to, k);
+      leg.aside = lerp(leg.wide, moving ? leg.side * lerp(0.035, 0.016, g) * H : home, k);
+      if (leg.swing >= 0.5) leg.way = sense;                        // the foot turns while it is in the air
+    }
+
+    // The foot lies along the ground; its heel peels up before it leaves, and the toe leads it down.
+    const w = leg.swing, toe = ground(leg.s, sense * leg.aside, leg.toe), heel = ground(leg.s - leg.way * FOOT, sense * leg.aside);
+    const along = toe.clone().sub(heel).normalize(), across = UP.clone().addScaledVector(along, -along.y).normalize();
+    leg.pitch = w >= 1 ? (moving ? lerp(0.5, 1, g) * smoothstep(sense * (s - leg.s), 0.3 * travel, 0.55 * travel) : 0)
+      : leg.kick * (1 - w) ** 2 * (1 + 2.2 * w) - (moving ? lerp(0.6, 0.35, g) * w * w * (1 - w) : 0);
+    const pitch = leg.pitch + 0.8 * air;
+    const rise = SOLE + lerp(0.05, 0.25, g) * H * sin(PI * w ** 0.75) ** 1.3 + jump + air * (0.16 - 0.07 * leg.side) * H;
+    toe.addScaledVector(UP, rise).addScaledVector(forward, -0.07 * H * air * leg.side);
+    leg.ankle.copy(toe).addScaledVector(along, -FOOT * cos(pitch)).addScaledVector(across, FOOT * sin(pitch));
+  }
+
+  // The pelvis rides at hip height, sinks into each landing, and never asks a leg to stretch.
+  const bob = -0.04 * g * cos(4 * PI * (body.phase - 0.45 * duty));
+  body.height = damp(body.height, (lerp(0.512, 0.47, g) + bob) * H + dip, 30, dt);
+  pelvis.set(0, body.height + jump, 0);
+  for (const leg of legs) {
+    const flat = hypot(leg.ankle.x - right.x * leg.side * HIP, leg.ankle.z - right.z * leg.side * HIP);
+    if (flat < 1.99 * LEG) pelvis.y = min(pelvis.y, leg.ankle.y + sqrt((1.99 * LEG) ** 2 - flat ** 2));
+  }
+
+  // Legs: hips swing with the stride, knees bend forward.
+  const twist = 0.2 * g * cos(2 * PI * body.phase);
+  for (const leg of legs) {
+    leg.hip.copy(pelvis).addScaledVector(right, leg.side * HIP * cos(twist)).addScaledVector(forward, -leg.side * HIP * sin(twist));
+    const reach = leg.ankle.clone().sub(leg.hip), span = min(reach.length(), 1.995 * LEG);
+    leg.toe.sub(leg.ankle), leg.ankle.copy(leg.hip).addScaledVector(reach.normalize(), span), leg.toe.add(leg.ankle);
+    const out = forward.clone().addScaledVector(right, 0.15 * leg.side).projectOnPlane(reach).normalize();
+    leg.knee.copy(leg.hip).addScaledVector(reach, span / 2).addScaledVector(out, sqrt(LEG ** 2 - span ** 2 / 4));
+  }
+
+  // The spine leans into speed and effort, and into the bend of the road ahead.
+  const veer = sense * angle(facing(s - 0.5 * H), facing(s + 0.5 * H), at(s).normalize());
+  body.bank = damp(body.bank, clamp(0.35 * g * veer, -0.3, 0.3), 10, dt);
+  const lean = lerp(0.03, 0.24, g) + clamp(0.1 * push, -0.1, 0.12), breath = 0.02 * sin(1.8 * clock) * (1 - g);
+  const spine = UP.clone().multiplyScalar(cos(lean)).addScaledVector(forward, sin(lean)).addScaledVector(right, -sin(body.bank)).normalize();
+  chest.copy(pelvis).addScaledVector(spine, TORSO * (1 + breath));
+  head.copy(chest).addScaledVector(spine.clone().add(UP).normalize(), NECK);
+
+  // Shoulders counter the hips; arms pump, or fly up in a leap.
+  const across = right.clone().multiplyScalar(cos(1.4 * twist)).addScaledVector(forward, sin(1.4 * twist));
+  const front = forward.clone().multiplyScalar(cos(1.4 * twist)).addScaledVector(right, -sin(1.4 * twist));
+  for (const arm of arms) {
+    const beat = arm.side * cos(2 * PI * (body.phase - 0.03));
+    const swing = lerp(0.1, 0.95, g) * beat + 0.1 * g + 0.04 * breath, bend = lerp(0.22, 1.4, g) + 0.35 * g * beat;
+    const upper = spine.clone().multiplyScalar(-cos(swing)).addScaledVector(front, sin(swing)).addScaledVector(across, 0.1 * arm.side);
+    const fore = spine.clone().multiplyScalar(-cos(swing + bend)).addScaledVector(front, sin(swing + bend)).addScaledVector(across, -0.3 * g * arm.side);
+    upper.lerp(across.clone().multiplyScalar(0.8 * arm.side).addScaledVector(spine, 0.7), air);
+    fore.lerp(across.clone().multiplyScalar(0.5 * arm.side).add(spine), air);
+    arm.shoulder.copy(chest).addScaledVector(across, arm.side * SHOULDER).addScaledVector(spine, -0.02 * H);
+    arm.elbow.copy(arm.shoulder).addScaledVector(upper.normalize(), UPPER);
+    arm.hand.copy(arm.elbow).addScaledVector(fore.normalize(), FORE);
+  }
+
+  limbs.forEach(([a, b, r], i) => {
+    rods.setMatrixAt(i, rod(a, b, r * H)), balls.setMatrixAt(2 * i, ball(a, r * H)), balls.setMatrixAt(2 * i + 1, ball(b, 0.8 * r * H));
+  });
+  balls.setMatrixAt(2 * limbs.length, ball(head, 0.115 * H));
+  arms.forEach((arm, i) => balls.setMatrixAt(2 * limbs.length + 1 + i, ball(arm.hand, 0.034 * H)));
+  rods.instanceMatrix.needsUpdate = balls.instanceMatrix.needsUpdate = true;
+}
+
+// ── Play ─────────────────────────────────────────────────────────────────────
+
+// Hold → (or the forward key on screen) to run on, ← to run back. Each key or
+// finger held is one entry, worth +1 or -1; holding both stands still.
+const held = new Map(), ARROWS = { ArrowRight: 1, ArrowLeft: -1 };
+const buttons = [...keys.querySelectorAll('button')];
+const hold = (what, way) => {
+  way ? held.set(what, way) : held.delete(what);
+  const ways = [...held.values()];
+  for (const b of buttons) b.setAttribute('aria-pressed', ways.includes(+b.dataset.way));
+  if (way) keys.classList.add('used');
+};
+const intent = () => sign([...held.values()].reduce((a, b) => a + b, 0));
+addEventListener('keydown', event => {
+  if (event.metaKey || event.ctrlKey || event.altKey || !(event.key in ARROWS)) return;
+  event.preventDefault();
+  hold(event.code, ARROWS[event.key]);
+});
+addEventListener('keyup', event => hold(event.code, 0));
+for (const b of buttons) b.addEventListener('pointerdown', event => {
+  if (event.button) return;
+  event.preventDefault();                   // keep focus where it was, so the arrow keys still work
+  b.setPointerCapture(event.pointerId);     // so the release is heard wherever it happens
+  hold(event.pointerId, +b.dataset.way);
+});
+addEventListener('pointerup', event => hold(event.pointerId, 0));
+addEventListener('pointercancel', event => hold(event.pointerId, 0));
+keys.addEventListener('contextmenu', event => event.preventDefault());
+addEventListener('blur', () => { held.clear(); hold(); });
+
+const BRAKE = SPEED / 0.3, PUSH = SPEED / 0.5, AIR = 1.15;    // his deceleration and acceleration, and the length of a leap in seconds
+let finale = -1, launch = 0, landed = -Infinity;    // seconds since the cycle closed (-1 while open), when he leaps, when he last landed
+
+function tick(dt) {
+  clock += dt;
+
+  // Run the way he is asked, never back past the start, and brake in time to stop on
+  // the start or on the last corner. To change direction he slows, then turns round.
+  const before = speed, asked = finale < 0 ? intent() : 0, wish = asked < 0 && s <= 0 ? 0 : SPEED * asked;
+  const rate = wish * speed < 0 || abs(wish) < abs(speed) ? BRAKE : PUSH;
+  speed += clamp(wish - speed, -rate * dt, rate * dt);
+  speed = clamp(speed, -max(sqrt(2 * BRAKE * s), 0.04), max(sqrt(2 * BRAKE * (length - s)), 0.04));
+  if (wish && sign(wish) !== sense && speed * sense <= 0) turnAround();
+  const ds = clamp(speed * dt, -s, length - s);
+  s += ds;
+  if (s <= 0 && speed < 0) s = speed = 0;
+  far = max(far, s);
+  about = damp(about, sense > 0 ? 0 : PI, calm ? 60 : 9, dt);
+  if (s >= length - 1e-9 && finale < 0) finale = speed = 0, launch = 1 + lag * max(...depth.filter(isFinite));
+
+  // Closing the cycle floods one side of it with ink, face by face. Then he leaps:
+  // the polytope spins away into his feet, and the next one unfolds from them.
+  if (finale >= 0) {
+    finale += dt;
+    if (leap < 0.5) tint = depth.map(d => d < Infinity ? smoothstep(finale, 0.2 + lag * d, 0.5 + lag * d) : 0), shade();
+    const was = leap;
+    leap = finale < launch ? -1 : (finale - launch) / AIR;
+    dip = -0.12 * H * sin(PI * clamp((finale - launch + 0.3) / 0.3, 0, 1) ** 2);
+    if (was < 0.5 && leap >= 0.5) enter(level + 1);
+    if (leap >= 1) finale = leap = -1, landed = clock;
+  }
+  if (finale < 0) dip = -0.1 * H * sin(PI * clamp((clock - landed) / 0.4, 0, 1) ** 0.6);
+  spin = leap < 0 || calm ? 0 : 2 * PI * smootherstep(leap, 0, 1);
+  scale = leap < 0 ? 1 : max(1e-4, abs(1 - 2 * smoothstep(leap, 0.12, 0.88)));
+
+  roll(ds);
+  pose(dt, ds, (abs(speed) - abs(before)) / dt / SPEED);
+  trace();
+}
+
+paint();
+enter(0);
+focus();
+let last = 0;
+renderer.setAnimationLoop(now => {
+  tick(min((now - last) / 1000, 1 / 30) || 1e-3);
+  last = now;
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>

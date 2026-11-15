@@ -1,0 +1,54 @@
+/* Every Vertex Once: shared tokens, type and the bar at the top of the reading pages.
+   The game reads --solid, --line, --ink and --thread to colour its scene. */
+
+:root {
+  --ground: #dededc;
+  --glow: #f3f3f2;
+  --solid: #ffffff;
+  --paper: #fbfbfa;
+  --card: #ffffff;
+  --line: #a4a4a1;
+  --rule: #e6e6e3;
+  --ink: #131315;
+  --muted: #6c6c70;
+  --thread: #e5372b;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --radius: 14px;
+  --radius-s: 8px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0a0a0c; --glow: #1b1b1f; --solid: #3b3b41; --paper: #0e0e10; --card: #18181b;
+    --line: #74747c; --rule: #26262a; --ink: #efeeea; --muted: #9d9da3; --thread: #ff4f3d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0a0a0c; --glow: #1b1b1f; --solid: #3b3b41; --paper: #0e0e10; --card: #18181b;
+  --line: #74747c; --rule: #26262a; --ink: #efeeea; --muted: #9d9da3; --thread: #ff4f3d;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 17px/1.55 var(--sans); -webkit-font-smoothing: antialiased; font-feature-settings: "lnum" 1;
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--thread); outline-offset: 3px; border-radius: 4px; }
+
+/* The bar: home on the left, the two pages on the right. */
+.sitebar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  height: 52px; padding: 0 max(16px, calc((100vw - 1240px) / 2 + 20px));
+  border-bottom: 1px solid var(--rule); font-size: 15px;
+}
+.sitebar a { color: inherit; text-decoration: none; }
+.sitebar .home { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+.sitebar .home::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--thread); }
+.sitebar nav { display: flex; gap: 4px; }
+.sitebar nav a { padding: 6px 11px; border-radius: var(--radius-s); color: var(--muted); white-space: nowrap; }
+.sitebar nav a:hover { color: var(--ink); }
+.sitebar nav a[aria-current="page"] { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }

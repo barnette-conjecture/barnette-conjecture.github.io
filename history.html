@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History · Every Vertex Once</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%226%22 fill=%22%23e5372b%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="site.css">
+<style>
+  /* One column, read top to bottom: a year, a heading, a few sentences, a picture. */
+  article { max-width: 680px; margin: 0 auto; padding: 56px 16px 96px; }
+  h1 { margin: 0 0 20px; font-size: clamp(34px, 6vw, 52px); line-height: 1.05; font-weight: 700; letter-spacing: -0.035em; }
+  .lede { margin: 0 0 56px; font-size: 21px; line-height: 1.5; color: var(--muted); }
+  section { position: relative; padding: 0 0 56px 28px; border-left: 1px solid var(--rule); }
+  section::before { content: ""; position: absolute; left: -5px; top: 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--thread); }
+  section:last-of-type { border-left-color: transparent; padding-bottom: 8px; }
+  time { display: block; margin-bottom: 4px; font-size: 15px; font-weight: 600; color: var(--thread); font-variant-numeric: tabular-nums; }
+  h2 { margin: 0 0 12px; font-size: 26px; line-height: 1.2; font-weight: 650; letter-spacing: -0.02em; }
+  p { margin: 0 0 14px; }
+  em { font-style: italic; }
+  figure { margin: 24px 0 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: var(--radius); background: var(--card); border: 1px solid var(--rule); }
+  figure img.drawing { padding: 24px; max-height: 440px; object-fit: contain; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) figure img.drawing { background: #f3f3f2; } }
+  :root[data-theme="dark"] figure img.drawing { background: #f3f3f2; }
+  figure.pair { display: grid; grid-template-columns: 0.8fr 1fr; gap: 12px; align-items: end; }
+  figure.pair figcaption { grid-column: 1 / -1; }
+  figure.portrait img { width: 220px; }
+  figcaption { margin-top: 10px; font-size: 14px; line-height: 1.45; color: var(--muted); }
+  .next { display: flex; justify-content: space-between; align-items: center; margin-top: 48px; padding: 22px 24px; font-size: 21px; font-weight: 600; letter-spacing: -0.015em; text-decoration: none; background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); transition: transform 160ms ease, border-color 160ms ease; }
+  .next::after { content: "→"; color: var(--thread); }
+  .next:hover { transform: translateY(-2px); border-color: var(--line); }
+  footer { max-width: 680px; margin: 0 auto; padding: 0 16px 64px; font-size: 13px; line-height: 1.5; color: var(--muted); }
+  footer h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+  footer ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<header class="sitebar">
+  <a class="home" href="./">Every Vertex Once</a>
+  <nav><a href="history.html" aria-current="page">History</a><a href="proof.html">Proof</a></nav>
+</header>
+<article>
+<h1>Every vertex once</h1>
+<p class="lede">In 1859 William Rowan Hamilton sold a puzzle to a London games maker for £25. It asked for a round trip that visits every corner of a solid exactly once. Which solids allow such a trip? For one large family, the answer arrived in 2026.</p>
+
+<section>
+  <time>1856</time>
+  <h2>The Icosian game</h2>
+  <p>Hamilton, Ireland’s Royal Astronomer, invented the game in 1856. The board is a flattened dodecahedron: 20 holes for its 20 corners, joined by 30 lines. The rule is simple. Travel along the lines, visit every hole once, and end where you started.</p>
+  <p>Jaques &amp; Son of London sold it from 1859 in two versions: a wooden board with numbered pegs, and a hand-held half dodecahedron sold as <em>The Traveller’s Dodecahedron, or a voyage round the world</em>. Neither sold well. The puzzle was too easy.</p>
+  <figure class="pair">
+    <img src="images/hamilton.jpg" width="640" height="768" alt="Painted portrait of William Rowan Hamilton">
+    <img src="images/icosian-board-lucas-1893.jpg" width="760" height="680" alt="The Icosian game board: twenty numbered circles joined by lines in the pattern of a flattened dodecahedron">
+    <figcaption>Hamilton, and the board as Édouard Lucas drew it in 1893.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <time>The idea</time>
+  <h2>A Hamiltonian cycle</h2>
+  <p>Think of a solid as its skeleton: corners are vertices, edges are edges. A <strong>Hamiltonian cycle</strong> is a closed route along the edges that passes through every vertex exactly once. Drop the return to the start and you have a <strong>Hamiltonian path</strong>.</p>
+  <p>Finding one on the dodecahedron takes a minute. Proving that one exists on every solid of some kind is another matter.</p>
+  <figure>
+    <img class="drawing" src="images/dodecahedron-hamiltonian-cycle.svg" width="470" height="450" alt="A flattened dodecahedron with a red closed path through all twenty vertices">
+    <figcaption>One of the dodecahedron’s Hamiltonian cycles.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <time>1855</time>
+  <h2>Kirkman got there first</h2>
+  <p>A year before Hamilton’s game, the English clergyman Thomas Kirkman asked the broader question in a paper for the Royal Society: which polyhedra have such a cycle? He found that some do not.</p>
+  <p>His trap: if every face has an even number of sides, a cycle must alternate between two kinds of corner, so it can only cover an even number of them. His example was a honeybee’s cell cut in half. It has 13 corners, so no cycle can visit them all. The name went to Hamilton anyway.</p>
+  <figure class="portrait">
+    <img src="images/kirkman.jpg" width="268" height="326" alt="Photograph of Thomas Kirkman">
+    <figcaption>Thomas Kirkman.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <time>1884</time>
+  <h2>Tait’s guess</h2>
+  <p>Peter Guthrie Tait, a physicist in Edinburgh, wanted to prove the four colour theorem. He saw a shortcut. Take a solid where every corner meets exactly three edges. If it has a Hamiltonian cycle, its faces can be coloured with four colours so that no two neighbours match.</p>
+  <p>So Tait guessed that every such solid has one. The guess stood for 62 years.</p>
+  <figure class="portrait">
+    <img src="images/tait.jpg" width="960" height="1176" alt="Photograph of Peter Guthrie Tait">
+    <figcaption>Peter Guthrie Tait in 1870.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <time>1946</time>
+  <h2>Tutte breaks it</h2>
+  <p>W. T. Tutte had spent the war at Bletchley Park, where he worked out how the German Lorenz cipher machine was built. Back at Cambridge, he drew a solid with 46 corners, three edges at each, and no Hamiltonian cycle. Tait was wrong.</p>
+  <figure>
+    <img class="drawing" src="images/tutte-graph.svg" width="584" height="530" alt="The Tutte graph: 46 vertices built from three identical pieces">
+    <figcaption>The Tutte graph: 46 vertices, 69 edges, no Hamiltonian cycle.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <time>1969</time>
+  <h2>Barnette’s question</h2>
+  <p>Tutte’s solid has faces with an odd number of sides. David Barnette, later a professor at UC Davis, asked what happens if every face is even.</p>
+  <p>Kirkman’s trap can’t spring then. When three edges meet at every corner and every face is even, the corners split into two equal halves, so their number is always even. Barnette conjectured that every such solid has a Hamiltonian cycle. In graph terms: every cubic, bipartite, 3-connected planar graph is Hamiltonian.</p>
+  <p>It appeared in 1969 as Conjecture 5 in <em>Recent Progress in Combinatorics</em>, a book edited by Tutte. Every solid in the game on the home page is one of Barnette’s.</p>
+  <figure>
+    <img class="drawing" src="images/barnette-graph.svg" width="651" height="314" alt="A graph with only even faces drawn twice, the second time with a Hamiltonian cycle highlighted">
+    <figcaption>A Barnette graph, and a Hamiltonian cycle on it.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <time>1976</time>
+  <h2>Off the page, it fails</h2>
+  <p>In 1971 Tutte guessed that the word <em>planar</em> could go. Joseph Horton proved him wrong with a graph of 96 vertices, three edges at each, corners split into two equal halves, and no Hamiltonian cycle. It cannot be drawn on paper without crossing edges, so it is not a solid. The smallest such graph, found later, has 50 vertices.</p>
+  <p>Barnette’s question, about solids, stood untouched.</p>
+  <figure>
+    <img class="drawing" src="images/horton-graph.svg" width="868" height="809" alt="The Horton graph: 96 vertices with many crossing edges">
+    <figcaption>The Horton graph.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <time>1975–2025</time>
+  <h2>Closing in</h2>
+  <p>For half a century no one found a counterexample, and no one found a proof. In 1975 Paul Goodey settled the solids whose faces are only squares and hexagons. Computers checked every case up to 64 vertices in 1985, and up to 90 in 2022. In 2025 Tobias Schnieders covered every case with faces of at most eight sides.</p>
+  <p>Each result shrank the space where a counterexample could hide.</p>
+  <figure>
+    <img src="images/solid-120.jpg" width="1320" height="1180" alt="The truncated icosidodecahedron from the game, with the runner and the first red edges of his cycle">
+    <figcaption>The last solid in the game has 120 vertices, more than any computer search reached.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <time>2026</time>
+  <h2>The proof</h2>
+  <p>OpenAI’s paper <em>Paired states and Hamiltonian cycles in cubic bipartite planar graphs</em>, dated 24 September 2026 and released on 6 October, proves Barnette was right. It proves a little more: the cycle can avoid any one edge you choose.</p>
+  <p>Put a dot in every face and join the dots of neighbouring faces. The result is a triangulation, and a Hamiltonian cycle becomes a way to split its dots into two trees. The proof counts certain arrangements on the triangulation, each with a sign. The ones that contain a loop cancel out, yet the total is not zero. So an arrangement without a loop exists. It gives the two trees, and the trees give the cycle.</p>
+  <p>Fifty-seven years after Barnette asked, the answer is yes.</p>
+  <figure>
+    <img src="images/proof-figure.jpg" width="1050" height="1050" alt="A Barnette graph drawn over its dual triangulation, from the proof walkthrough">
+    <figcaption>A Barnette graph over its triangulation, from the walkthrough.</figcaption>
+  </figure>
+  <a class="next" href="proof.html">Walk through the proof</a>
+</section>
+</article>
+<footer>
+  <h3>Pictures</h3>
+  <ul>
+    <li>Hamilton: unknown artist, public domain, <a href="https://commons.wikimedia.org/wiki/File:William_Rowan_Hamilton_painting.jpg">Wikimedia Commons</a>.</li>
+    <li>Icosian board: Édouard Lucas, <em>Récréations mathématiques</em>, vol. 2 (1893), fig. 97, public domain, <a href="https://commons.wikimedia.org/wiki/File:Lucas_-_R%C3%A9cr%C3%A9ations_math%C3%A9matiques,_tome_2,_1893.pdf">Wikimedia Commons</a>.</li>
+    <li>Dodecahedron cycle: Christoph Sommer, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>, <a href="https://commons.wikimedia.org/wiki/File:Hamiltonian_path.svg">Wikimedia Commons</a>.</li>
+    <li>Kirkman: unknown photographer, public domain, <a href="https://commons.wikimedia.org/wiki/File:Thomas_P_Kirkman.jpg">Wikimedia Commons</a>.</li>
+    <li>Tait: Dr Adamson of St Andrews (1870), public domain, <a href="https://commons.wikimedia.org/wiki/File:Tait_Peter_Guthrie_(cropped).jpg">Wikimedia Commons</a>.</li>
+    <li>Tutte graph and Horton graph: Koko90, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>, Wikimedia Commons (<a href="https://commons.wikimedia.org/wiki/File:Tutte_graph.svg">1</a>, <a href="https://commons.wikimedia.org/wiki/File:Horton_graph.svg">2</a>).</li>
+    <li>Barnette graph: BagLuke, CC0, <a href="https://commons.wikimedia.org/wiki/File:Barnette%27s_conjecture.svg">Wikimedia Commons</a>.</li>
+  </ul>
+</footer>
+</body>
+</html>
